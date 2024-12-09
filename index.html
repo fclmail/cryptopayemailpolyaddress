@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pay with MetaMask (Polygon USDC)</title>
+  <style>
+    body {
+      background-color: #1e2a47;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 3em;
+      margin-bottom: 20px;
+      color: #f39c12;
+    }
+    .pay-button {
+      background-color: #f39c12;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .pay-button:hover {
+      background-color: #e67e22;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    .success-button {
+      display: none;
+      margin-top: 20px;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      color: white;
+      text-decoration: none;
+      background: #0f0;
+      border-radius: 5px;
+      box-shadow: 0 0 15px 5px rgba(0, 255, 0, 0.8);
+      animation: glowing 1.5s infinite;
+    }
+    @keyframes glowing {
+      0% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.4); }
+      50% { box-shadow: 0 0 20px rgba(0, 255, 0, 0.8); }
+      100% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.4); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Pay with MetaMask (Polygon USDC)</h1>
+  
+  <p>Choose an amount to pay via Polygon USDC (ERC20)</p>
+  
+  <select id="paymentAmount">
+    <option value="0.01">0.01 USDC</option>
+    <option value="200">200 USDC</option>
+    <option value="1000">1000 USDC</option>
+  </select>
+
+  <br><br>
+  
+  <button class="pay-button" id="payButton">Pay Now with MetaMask</button>
+
+  <div id="status" class="info"></div>
+
+  <a href="https://google.com" class="success-button" id="successButton">Continue to Google</a>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.5.2/web3.min.js"></script>
+  
+  <script>
+    if (typeof window.ethereum !== 'undefined') {
+      const web3 = new Web3(window.ethereum);
+
+      const usdcAddress = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359';
+      const decimals = 6;
+
+      document.getElementById("payButton").onclick = async function() {
+        const paymentAmount = document.getElementById("paymentAmount").value;
+
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+          const accounts = await web3.eth.getAccounts();
+          const senderAddress = accounts[0];
+          const recipientAddress = '0x2Ee934331C771F0f5901314226375F469e7CeceC';
+          const amountInTokens = web3.utils.toBN(paymentAmount * Math.pow(10, decimals));
+
+          const usdcABI = [
+            {
+              "constant": false,
+              "inputs": [
+                { "name": "_to", "type": "address" },
+                { "name": "_value", "type": "uint256" }
+              ],
+              "name": "transfer",
+              "outputs": [{ "name": "", "type": "bool" }],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }
+          ];
+
+          const usdcContract = new web3.eth.Contract(usdcABI, usdcAddress);
+
+          const txHash = await usdcContract.methods.transfer(recipientAddress, amountInTokens).send({
+            from: senderAddress,
+            gas: 200000,
+            gasPrice: '0x5d21dba00'
+          });
+
+          document.getElementById("status").innerHTML = `Transaction successful! <br> Tx Hash: ${txHash.transactionHash}`;
+          document.getElementById("successButton").style.display = "inline-block";
+        } catch (error) {
+          console.error(error);
+          document.getElementById("status").innerHTML = `Transaction failed: ${error.message}`;
+        }
+      };
+    } else {
+      document.getElementById("status").innerHTML = "Please install MetaMask to proceed with the payment.";
+    }
+  </script>
+</body>
+</html>
